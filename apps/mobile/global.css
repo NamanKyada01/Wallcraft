@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Backgrounds */
+    --color-bg-primary: #0A0A0F;
+    --color-bg-secondary: #141420;
+    --color-bg-tertiary: #1E1E2E;
+    --color-bg-card: #1A1A2E;
+    --color-bg-elevated: #22223A;
+    --color-bg-input: #1E1E2E;
+    --color-bg-glass: rgba(255, 255, 255, 0.05);
+    --color-bg-glass-border: rgba(255, 255, 255, 0.1);
+
+    /* Text */
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #A0A0B8;
+    --color-text-tertiary: #6B6B80;
+    --color-text-inverse: #0A0A0F;
+    --color-text-link: #7C6EF6;
+
+    /* Accent */
+    --color-accent-primary: #7C6EF6;
+    --color-accent-secondary: #A78BFA;
+    --color-accent-tertiary: #5B4FD4;
+
+    /* Status */
+    --color-status-success: #22C55E;
+    --color-status-warning: #F59E0B;
+    --color-status-error: #EF4444;
+    --color-status-info: #3B82F6;
+
+    /* Borders */
+    --color-border-light: rgba(255, 255, 255, 0.08);
+    --color-border-medium: rgba(255, 255, 255, 0.15);
+    --color-border-focus: #7C6EF6;
+    --color-border-error: #EF4444;
+
+    /* Shadows */
+    --color-shadow-sm: rgba(0, 0, 0, 0.3);
+    --color-shadow-md: rgba(0, 0, 0, 0.5);
+    --color-shadow-lg: rgba(0, 0, 0, 0.7);
+    --color-shadow-accent: rgba(124, 110, 246, 0.3);
+
+    /* Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-2xl: 32px;
+    --radius-full: 9999px;
+  }
+}
+
+/* Light theme override */
+.light {
+  --color-bg-primary: #F8F9FA;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #F0F0F5;
+  --color-bg-card: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-input: #F0F0F5;
+  --color-bg-glass: rgba(0, 0, 0, 0.03);
+  --color-bg-glass-border: rgba(0, 0, 0, 0.08);
+
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #6B6B80;
+  --color-text-tertiary: #9CA3AF;
+  --color-text-inverse: #FFFFFF;
+
+  --color-border-light: rgba(0, 0, 0, 0.06);
+  --color-border-medium: rgba(0, 0, 0, 0.12);
+
+  --color-shadow-sm: rgba(0, 0, 0, 0.05);
+  --color-shadow-md: rgba(0, 0, 0, 0.1);
+  --color-shadow-lg: rgba(0, 0, 0, 0.15);
+}
+
+/* Global resets */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-bg-glass-border);
+  backdrop-filter: blur(20px);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #7C6EF6, #A78BFA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
