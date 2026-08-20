@@ -183,7 +183,10 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
         <View className="px-5 pt-6 -mt-6 rounded-t-3xl bg-bg-primary border-t border-white/10">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 mr-3">
-              <Text className="text-2xl font-extrabold text-text-primary tracking-tight">
+              <Text
+                className="text-2xl font-bold text-text-primary tracking-wide"
+                style={{ fontFamily: 'DMSerifDisplay_400Regular' }}
+              >
                 {wallpaper.title}
               </Text>
               <View className="flex-row items-center mt-2">

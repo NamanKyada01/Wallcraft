@@ -147,7 +147,10 @@ export function HomeScreen() {
                 <Text className="text-text-secondary text-xs font-medium tracking-wide">
                   {greeting()}
                 </Text>
-                <Text className="text-2xl font-extrabold text-text-primary tracking-tight">
+                <Text
+                  className="text-3xl font-bold text-text-primary tracking-wide"
+                  style={{ fontFamily: 'DMSerifDisplay_400Regular' }}
+                >
                   {t('about.appName')}
                 </Text>
               </View>
@@ -273,7 +276,12 @@ function SectionHeader({
   const { t } = useTranslation();
   return (
     <View className="flex-row items-center justify-between px-4 mb-3">
-      <Text className="text-lg font-extrabold text-text-primary tracking-tight">{title}</Text>
+      <Text
+        className="text-xl font-bold text-text-primary tracking-wide"
+        style={{ fontFamily: 'DMSerifDisplay_400Regular' }}
+      >
+        {title}
+      </Text>
       {onSeeAll && (
         <Pressable onPress={onSeeAll} hitSlop={8}>
           <Text className="text-accent-primary text-xs font-bold">

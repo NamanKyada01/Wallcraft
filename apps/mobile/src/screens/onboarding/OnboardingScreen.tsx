@@ -18,7 +18,6 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolation,
-  withSpring,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -36,6 +35,7 @@ export function OnboardingScreen({ navigation }: Props) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollX = useSharedValue(0);
+  const scrollRef = useRef<Animated.ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const pages = [
@@ -43,6 +43,7 @@ export function OnboardingScreen({ navigation }: Props) {
       title: t('onboarding.discover_title'),
       description: t('onboarding.discover_desc'),
       emoji: '🌌',
+      badge: 'NANO CURATED',
       color1: '#7C6EF6',
       color2: '#EC4899',
       icon: 'sparkles',
@@ -51,6 +52,7 @@ export function OnboardingScreen({ navigation }: Props) {
       title: t('onboarding.personalize_title'),
       description: t('onboarding.personalize_desc'),
       emoji: '📱',
+      badge: '4K ULTRA HD',
       color1: '#06B6D4',
       color2: '#7C6EF6',
       icon: 'color-palette',
@@ -59,6 +61,7 @@ export function OnboardingScreen({ navigation }: Props) {
       title: t('onboarding.collections_title'),
       description: t('onboarding.collections_desc'),
       emoji: '❤️',
+      badge: 'CUSTOM SYNC',
       color1: '#F97316',
       color2: '#EC4899',
       icon: 'heart',
@@ -70,7 +73,8 @@ export function OnboardingScreen({ navigation }: Props) {
   });
 
   const onMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setActiveIndex(Math.round(event.nativeEvent.contentOffset.x / width));
+    const page = Math.round(event.nativeEvent.contentOffset.x / width);
+    setActiveIndex(page);
   };
 
   const completeOnboarding = async () => {
@@ -80,7 +84,12 @@ export function OnboardingScreen({ navigation }: Props) {
 
   const goToNext = () => {
     if (activeIndex < pages.length - 1) {
-      setActiveIndex(activeIndex + 1);
+      const nextIndex = activeIndex + 1;
+      setActiveIndex(nextIndex);
+      scrollRef.current?.scrollTo({
+        x: nextIndex * width,
+        animated: true,
+      });
     } else {
       completeOnboarding();
     }
@@ -88,28 +97,46 @@ export function OnboardingScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView className="flex-1 bg-bg-primary" edges={['top', 'bottom']}>
-      {/* Skip button */}
-      <View style={{ paddingTop: insets.top }}>
-        {activeIndex < pages.length - 1 && (
+      {/* Top Header with Skip button */}
+      <View
+        className="flex-row items-center justify-between px-6 py-2"
+        style={{ paddingTop: Math.max(insets.top, 8) }}
+      >
+        <View className="flex-row items-center">
+          <Text className="text-lg">🍌</Text>
+          <Text
+            className="text-white text-base font-bold ml-1.5"
+            style={{ fontFamily: 'DMSerifDisplay_400Regular' }}
+          >
+            Wallcraft
+          </Text>
+        </View>
+
+        {activeIndex < pages.length - 1 ? (
           <Pressable
-            className="self-end px-5 py-2"
+            className="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10"
             onPress={completeOnboarding}
             hitSlop={8}
           >
-            <Text className="text-text-secondary text-sm font-medium">
+            <Text className="text-text-secondary text-xs font-semibold">
               {t('onboarding.skip')}
             </Text>
           </Pressable>
+        ) : (
+          <View style={{ width: 40 }} />
         )}
       </View>
 
+      {/* Main Slide Carousel */}
       <Animated.ScrollView
+        ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
+        decelerationRate="fast"
       >
         {pages.map((page, index) => (
           <OnboardingPage
@@ -122,11 +149,12 @@ export function OnboardingScreen({ navigation }: Props) {
         ))}
       </Animated.ScrollView>
 
-      {/* Bottom controls */}
+      {/* Bottom Controls */}
       <View
         className="px-6 pb-6"
         style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
+        {/* Pagination Dots */}
         <View className="flex-row justify-center items-center mb-6">
           {pages.map((_, index) => (
             <Dot key={index} index={index} scrollX={scrollX} width={width} />
@@ -167,7 +195,7 @@ function OnboardingPage({
   const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
 
   const imageStyle = useAnimatedStyle(() => {
-    const scale = interpolate(scrollX.value, inputRange, [0.7, 1, 0.7], Extrapolation.CLAMP);
+    const scale = interpolate(scrollX.value, inputRange, [0.75, 1, 0.75], Extrapolation.CLAMP);
     const translateY = interpolate(
       scrollX.value,
       inputRange,
@@ -182,7 +210,7 @@ function OnboardingPage({
     const translateY = interpolate(
       scrollX.value,
       inputRange,
-      [30, 0, -30],
+      [25, 0, -25],
       Extrapolation.CLAMP,
     );
     return { opacity, transform: [{ translateY }] };
@@ -190,51 +218,50 @@ function OnboardingPage({
 
   return (
     <View className="items-center justify-center px-8" style={{ width }}>
-      {/* Animated visual */}
+      {/* Animated Visual orb */}
       <Animated.View
-        className="w-64 h-64 rounded-full items-center justify-center mb-12"
+        className="w-72 h-72 rounded-full items-center justify-center mb-10 relative"
         style={[
           {
-            backgroundColor: `${page.color1}22`,
+            backgroundColor: `${page.color1}18`,
             borderWidth: 1,
-            borderColor: `${page.color1}44`,
+            borderColor: `${page.color1}35`,
           },
           imageStyle,
         ]}
       >
         <View
-          className="w-48 h-48 rounded-full items-center justify-center"
-          style={{ backgroundColor: `${page.color2}26` }}
+          className="w-52 h-52 rounded-full items-center justify-center"
+          style={{ backgroundColor: `${page.color2}22` }}
         >
           <View
-            className="w-32 h-32 rounded-full items-center justify-center"
-            style={{ backgroundColor: `${page.color1}33` }}
+            className="w-36 h-36 rounded-full items-center justify-center shadow-2xl"
+            style={{ backgroundColor: `${page.color1}30` }}
           >
             <Text className="text-7xl">{page.emoji}</Text>
           </View>
         </View>
 
-        {/* Floating accent dots */}
+        {/* Floating badge */}
         <View
-          className="absolute w-4 h-4 rounded-full top-6 left-8"
+          className="absolute -top-3 px-3 py-1 rounded-full border border-white/20 shadow-lg"
           style={{ backgroundColor: page.color1 }}
-        />
-        <View
-          className="absolute w-3 h-3 rounded-full bottom-10 right-10"
-          style={{ backgroundColor: page.color2 }}
-        />
-        <View
-          className="absolute w-2.5 h-2.5 rounded-full top-16 right-12"
-          style={{ backgroundColor: colors.accent.secondary }}
-        />
+        >
+          <Text className="text-white text-[10px] font-extrabold tracking-widest uppercase">
+            {page.badge}
+          </Text>
+        </View>
       </Animated.View>
 
-      {/* Text */}
+      {/* Typography */}
       <Animated.View style={textStyle} className="items-center">
-        <Text className="text-2xl font-bold text-text-primary text-center leading-9">
+        <Text
+          className="text-3xl text-text-primary text-center leading-10 font-bold"
+          style={{ fontFamily: 'DMSerifDisplay_400Regular' }}
+        >
           {page.title}
         </Text>
-        <Text className="text-base text-text-secondary text-center mt-3 leading-6">
+        <Text className="text-sm text-text-secondary text-center mt-3 leading-6 px-4">
           {page.description}
         </Text>
       </Animated.View>
@@ -258,13 +285,15 @@ function Dot({
       [8, 28, 8],
       Extrapolation.CLAMP,
     );
-    const backgroundColor =
-      scrollX.value >= (index - 0.5) * width && scrollX.value < (index + 0.5) * width
-        ? colors.accent.primary
-        : 'rgba(255,255,255,0.25)';
+    const opacity = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.3, 1, 0.3],
+      Extrapolation.CLAMP,
+    );
     return {
       width: widthAnim,
-      backgroundColor,
+      opacity,
     };
   });
 
@@ -272,7 +301,12 @@ function Dot({
     <Animated.View
       style={[
         style,
-        { height: 8, borderRadius: 4, marginHorizontal: 4 },
+        {
+          height: 7,
+          borderRadius: 4,
+          marginHorizontal: 3.5,
+          backgroundColor: colors.accent.primary,
+        },
       ]}
     />
   );

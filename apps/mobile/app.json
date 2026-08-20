@@ -35,7 +35,8 @@
     "plugins": [
       "expo-image",
       "expo-status-bar",
-      "expo-localization"
+      "expo-localization",
+      "expo-font"
     ],
     "scheme": "wallcraft",
     "extra": {

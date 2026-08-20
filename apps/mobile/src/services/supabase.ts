@@ -1,14 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl ?? '';
-const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey ?? '';
+const rawSupabaseUrl = Constants.expoConfig?.extra?.supabaseUrl ?? '';
+const rawSupabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey ?? '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    'Supabase URL and Anon Key are not set. Update app.json extra field with your Supabase credentials.'
-  );
-}
+const isValidHttpUrl = (url: string) =>
+  typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+
+export const isSupabaseConfigured =
+  isValidHttpUrl(rawSupabaseUrl) &&
+  Boolean(rawSupabaseAnonKey) &&
+  rawSupabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY';
+
+const supabaseUrl = isSupabaseConfigured
+  ? rawSupabaseUrl
+  : 'https://placeholder-project.supabase.co';
+
+const supabaseAnonKey = isSupabaseConfigured
+  ? rawSupabaseAnonKey
+  : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -19,7 +29,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 export const CLOUDINARY_CLOUD_NAME =
-  Constants.expoConfig?.extra?.cloudinaryCloudName ?? '';
+  Constants.expoConfig?.extra?.cloudinaryCloudName &&
+  Constants.expoConfig?.extra?.cloudinaryCloudName !== 'YOUR_CLOUDINARY_CLOUD_NAME'
+    ? Constants.expoConfig.extra.cloudinaryCloudName
+    : 'demo';
 
 export interface CloudinaryTransformOptions {
   width?: number;
@@ -37,13 +50,17 @@ export const getCloudinaryUrl = (
 ): string => {
   if (!publicIdOrUrl) return '';
 
+  // If it's a direct non-cloudinary external URL (e.g. unsplash), return directly
+  if (publicIdOrUrl.startsWith('http') && !publicIdOrUrl.includes('cloudinary.com')) {
+    return publicIdOrUrl;
+  }
+
   // Extract clean public_id if full URL was supplied
   let publicId = publicIdOrUrl;
   if (publicIdOrUrl.includes('/upload/')) {
     const parts = publicIdOrUrl.split('/upload/');
     const afterUpload = parts[1];
     const subParts = afterUpload.split('/');
-    // Check if subParts[0] is transformation params (doesn't start with 'v' and contains _)
     if (subParts.length > 1 && !subParts[0].startsWith('v') && subParts[0].includes('_')) {
       publicId = subParts.slice(1).join('/');
     } else {
@@ -60,7 +77,6 @@ export const getCloudinaryUrl = (
   if (options.format) params.push(`f_${options.format}`);
   if (options.effect) params.push(`e_${options.effect}`);
 
-  const cloudName = CLOUDINARY_CLOUD_NAME || 'demo';
   const transformPath = params.length > 0 ? `${params.join(',')}/` : '';
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformPath}${publicId}`;
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${transformPath}${publicId}`;
 };

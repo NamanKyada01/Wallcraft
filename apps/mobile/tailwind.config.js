@@ -64,6 +64,7 @@ module.exports = {
         medium: ['Inter-Medium', 'System', 'sans-serif'],
         bold: ['Inter-Bold', 'System', 'sans-serif'],
         light: ['Inter-Light', 'System', 'sans-serif'],
+        serif: ['DMSerifDisplay_400Regular', 'Georgia', 'serif'],
       },
       borderRadius: {
         '2xl': '24px',

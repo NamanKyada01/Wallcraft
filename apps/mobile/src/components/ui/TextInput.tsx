@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, TextInput as RNTextInput, Text, Platform } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { View, TextInput as RNTextInput, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import colors from '../../theme/colors';
 
 interface TextInputProps {
   label: string;
@@ -8,7 +10,7 @@ interface TextInputProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   secureTextEntry?: boolean;
-  error?: string;
+  error?: string | null;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   autoCorrect?: boolean;
@@ -17,6 +19,8 @@ interface TextInputProps {
   multiline?: boolean;
   numberOfLines?: number;
   leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  onRightIconPress?: () => void;
   className?: string;
 }
 
@@ -35,33 +39,41 @@ export function TextInput({
   multiline = false,
   numberOfLines,
   leftIcon,
+  rightIcon,
+  onRightIconPress,
   className = '',
 }: TextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
 
-  const labelAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(isFocused || value ? 1 : 1, { damping: 15 }) }],
-  }));
-
   return (
     <View className={`mb-4 ${className}`}>
       <Text
-        className={`text-sm font-medium mb-1.5 ${
-          isFocused ? 'text-accent-primary' : 'text-text-secondary'
+        className={`text-xs font-bold mb-1.5 uppercase tracking-wider ${
+          error
+            ? 'text-status-error'
+            : isFocused
+            ? 'text-accent-primary'
+            : 'text-text-secondary'
         }`}
       >
         {label}
       </Text>
 
       <View
-        className={`flex-row items-center rounded-xl px-4 border bg-bg-input ${
-          error ? 'border-status-error' : isFocused ? 'border-accent-primary' : 'border-border-light'
+        className={`flex-row items-center rounded-2xl px-4 border bg-bg-card transition ${
+          error
+            ? 'border-status-error/80 bg-status-error/5'
+            : isFocused
+            ? 'border-accent-primary bg-accent-primary/5 shadow-md'
+            : 'border-white/10'
         }`}
       >
         {leftIcon && <View className="mr-3">{leftIcon}</View>}
 
         <RNTextInput
-          className={`flex-1 text-text-primary py-3 text-base ${multiline ? 'pt-2' : ''}`}
+          className={`flex-1 text-text-primary py-3.5 text-sm font-medium ${
+            multiline ? 'pt-3' : ''
+          }`}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -77,10 +89,25 @@ export function TextInput({
           multiline={multiline}
           numberOfLines={numberOfLines}
         />
+
+        {rightIcon && (
+          <Pressable onPress={onRightIconPress} hitSlop={8} className="ml-2">
+            {rightIcon}
+          </Pressable>
+        )}
       </View>
 
       {error ? (
-        <Text className="text-status-error text-xs mt-1">{error}</Text>
+        <Animated.View
+          entering={FadeIn.duration(150)}
+          exiting={FadeOut.duration(150)}
+          className="flex-row items-center mt-1.5 px-1"
+        >
+          <Ionicons name="alert-circle" size={13} color={colors.status.error} />
+          <Text className="text-status-error text-xs font-semibold ml-1.5">
+            {error}
+          </Text>
+        </Animated.View>
       ) : null}
     </View>
   );

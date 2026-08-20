@@ -6,10 +6,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  useFonts,
+  DMSerifDisplay_400Regular,
+  DMSerifDisplay_400Regular_Italic,
+} from '@expo-google-fonts/dm-serif-display';
 
 import './global.css';
 import './src/i18n';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { AnimatedSplashScreen } from './src/components/AnimatedSplashScreen';
 import colors from './src/theme/colors';
 
 const navTheme = {
@@ -27,25 +33,37 @@ const navTheme = {
 export const ONBOARDING_KEY = 'has_completed_onboarding';
 
 export default function App() {
-  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+  const [fontsLoaded] = useFonts({
+    DMSerifDisplay_400Regular,
+    DMSerifDisplay_400Regular_Italic,
+  });
+
+  const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
-      setHasOnboarded(value === 'true');
-    });
+    AsyncStorage.getItem(ONBOARDING_KEY)
+      .then((value) => {
+        setHasOnboarded(value === 'true');
+        setIsReady(true);
+      })
+      .catch(() => {
+        setHasOnboarded(false);
+        setIsReady(true);
+      });
   }, []);
-
-  if (hasOnboarded === null) {
-    return <View className="flex-1 bg-bg-primary" />;
-  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        <StatusBar style="light" />
         <NavigationContainer theme={navTheme}>
-          <StatusBar style="light" />
           <AppNavigator hasOnboarded={hasOnboarded} />
         </NavigationContainer>
+        {showSplash && (
+          <AnimatedSplashScreen onFinish={() => setShowSplash(false)} />
+        )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
