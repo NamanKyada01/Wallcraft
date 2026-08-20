@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { SearchBar } from '../../components/SearchBar';
@@ -20,11 +21,29 @@ import type { MainStackParamList } from '../../navigation/MainNavigator';
 
 const RECENT_KEY = 'recent_searches';
 
+interface ColorMood {
+  id: string;
+  name: string;
+  color: string;
+  tag: string;
+}
+
+const COLOR_MOODS: ColorMood[] = [
+  { id: 'obsidian', name: 'Obsidian', color: '#0B0C10', tag: 'dark' },
+  { id: 'violet', name: 'Neon Violet', color: '#9747FF', tag: 'cyberpunk' },
+  { id: 'azure', name: 'Cyber Azure', color: '#38BDF8', tag: 'space' },
+  { id: 'emerald', name: 'Emerald', color: '#10B981', tag: 'nature' },
+  { id: 'sunset', name: 'Sunset Rose', color: '#FF4B93', tag: 'abstract' },
+  { id: 'amber', name: 'Gold Amber', color: '#F59E0B', tag: 'minimal' },
+  { id: 'crimson', name: 'Crimson Flame', color: '#EF4444', tag: 'cars' },
+];
+
 export function SearchScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
 
   const [query, setQuery] = useState('');
+  const [activeColorMood, setActiveColorMood] = useState<string | null>(null);
   const [results, setResults] = useState<Wallpaper[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
@@ -74,7 +93,31 @@ export function SearchScreen() {
 
   const onQueryChange = (text: string) => {
     setQuery(text);
+    setActiveColorMood(null);
     debouncedSearch(text);
+  };
+
+  const handleColorMoodSelect = async (mood: ColorMood) => {
+    Haptics.selectionAsync();
+    if (activeColorMood === mood.id) {
+      setActiveColorMood(null);
+      setHasSearched(false);
+      setResults([]);
+      return;
+    }
+
+    setActiveColorMood(mood.id);
+    setQuery('');
+    setLoading(true);
+    setHasSearched(true);
+    try {
+      const data = await wallpaperService.search(mood.tag);
+      setResults(data);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const clearHistory = async () => {
@@ -94,8 +137,8 @@ export function SearchScreen() {
     if (loading) {
       return (
         <View className="py-16 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.accent.primary} />
-          <Text className="text-text-tertiary text-xs mt-3">Searching Cloudinary wallpapers...</Text>
+          <ActivityIndicator size="large" color="#9747FF" />
+          <Text className="text-white/40 text-xs mt-3 font-medium">Filtering 4K Wallpapers...</Text>
         </View>
       );
     }
@@ -142,7 +185,7 @@ export function SearchScreen() {
               {recent.map((term) => (
                 <Pressable
                   key={term}
-                  className="flex-row items-center bg-bg-card border border-white/10 rounded-full px-3.5 py-1.5 mr-2 mb-2"
+                  className="flex-row items-center bg-[#151624] border border-white/10 rounded-full px-3.5 py-1.5 mr-2 mb-2 active:bg-white/10"
                   onPress={() => {
                     setQuery(term);
                     performSearch(term);
@@ -175,8 +218,12 @@ export function SearchScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg-primary" edges={['top']}>
-      <View className="px-4 mb-4 mt-2">
-        <Text className="text-2xl font-extrabold text-text-primary mb-3 tracking-tight">
+      {/* Header with Title & Search Bar */}
+      <View className="px-4 mb-3 mt-2">
+        <Text
+          className="text-3xl font-bold text-text-primary mb-3 tracking-wide"
+          style={{ fontFamily: 'DMSerifDisplay_400Regular' }}
+        >
           {t('tabs.explore')}
         </Text>
         <SearchBar
@@ -184,6 +231,42 @@ export function SearchScreen() {
           onChangeText={onQueryChange}
           onSubmit={() => performSearch(query)}
         />
+      </View>
+
+      {/* Color Mood Filter Bar */}
+      <View className="mb-4">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+        >
+          {COLOR_MOODS.map((mood) => {
+            const isSelected = activeColorMood === mood.id;
+            return (
+              <Pressable
+                key={mood.id}
+                onPress={() => handleColorMoodSelect(mood)}
+                className={`flex-row items-center px-3.5 py-2 rounded-full border ${
+                  isSelected
+                    ? 'bg-[#1F1B38] border-[#9747FF]'
+                    : 'bg-[#151624] border-white/10'
+                }`}
+              >
+                <View
+                  style={{ backgroundColor: mood.color }}
+                  className="w-3.5 h-3.5 rounded-full border border-white/30 mr-2"
+                />
+                <Text
+                  className={`text-xs font-bold ${
+                    isSelected ? 'text-[#A78BFA]' : 'text-white/70'
+                  }`}
+                >
+                  {mood.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </View>
 
       <FlatList

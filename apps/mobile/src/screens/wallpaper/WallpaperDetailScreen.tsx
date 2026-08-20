@@ -16,6 +16,8 @@ import { Button } from '../../components/ui/Button';
 import { WallpaperCard } from '../../components/WallpaperCard';
 import { FloatingLivePreview } from '../../components/ui/FloatingLivePreview';
 import { FloatingToast, ToastConfig } from '../../components/ui/FloatingToast';
+import { ColorPaletteExtractor } from '../../components/wallpaper/ColorPaletteExtractor';
+import { ResolutionExportModal } from '../../components/wallpaper/ResolutionExportModal';
 import { wallpaperService } from '../../services/wallpaper.service';
 import { storageService } from '../../services/storage.service';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -38,6 +40,7 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
   const [related, setRelated] = useState<Wallpaper[]>([]);
   const [favorite, setFavorite] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [toast, setToast] = useState<ToastConfig | null>(null);
 
   const heartScale = useSharedValue(1);
@@ -70,13 +73,38 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
     });
   };
 
-  const handleDownload = async () => {
+  const handleConfirmExport = async (format: 'mobile' | 'desktop' | 'watch' | 'amoled') => {
     try {
       setDownloading(true);
-      const downloadUrl = wallpaperService.getDownloadUrl(wallpaper.cloudinary_url);
+      let downloadUrl = wallpaperService.getDownloadUrl(wallpaper.cloudinary_url);
+
+      if (format === 'desktop') {
+        downloadUrl = wallpaperService.getCustomTransformUrl(wallpaper.cloudinary_url, {
+          width: 3840,
+          height: 2160,
+          crop: 'fill',
+          quality: 'auto:best',
+        });
+      } else if (format === 'watch') {
+        downloadUrl = wallpaperService.getCustomTransformUrl(wallpaper.cloudinary_url, {
+          width: 600,
+          height: 600,
+          crop: 'fill',
+          quality: 'auto:best',
+        });
+      } else if (format === 'amoled') {
+        downloadUrl = wallpaperService.getCustomTransformUrl(wallpaper.cloudinary_url, {
+          width: 1080,
+          height: 2400,
+          crop: 'fill',
+          quality: 'auto:best',
+          effect: 'contrast:30',
+        });
+      }
+
       await storageService.downloadAndSave(
         downloadUrl,
-        `wallcraft_${wallpaper.id}.jpg`,
+        `wallcraft_${wallpaper.id}_${format}.jpg`,
       );
 
       if (user) {
@@ -84,7 +112,7 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
       }
 
       setToast({
-        message: 'Wallpaper saved to Gallery! 📥',
+        message: `Saved ${format.toUpperCase()} 4K Wallpaper to Gallery! 📥`,
         type: 'success',
       });
     } catch (e: any) {
@@ -116,11 +144,19 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
       {/* Floating Toast Notification */}
       <FloatingToast toast={toast} onHide={() => setToast(null)} />
 
-      {/* Floating Interactive Live Simulator Modal */}
+      {/* Interactive Phone Simulator Modal */}
       <FloatingLivePreview
         visible={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         imageUrl={previewUrl}
+        title={wallpaper.title}
+      />
+
+      {/* Multi-Resolution Export Modal */}
+      <ResolutionExportModal
+        visible={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onConfirmDownload={handleConfirmExport}
         title={wallpaper.title}
       />
 
@@ -129,16 +165,16 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
         <Pressable onPress={() => setIsPreviewOpen(true)} className="relative">
           <Image
             source={{ uri: previewUrl }}
-            style={{ width: '100%', height: 520 }}
+            style={{ width: '100%', height: 500 }}
             contentFit="cover"
             transition={300}
           />
 
           {/* Floating Tap to Preview Badge */}
-          <View className="absolute bottom-10 right-4 bg-black/60 border border-white/20 px-3 py-1.5 rounded-full flex-row items-center backdrop-blur-md">
-            <Ionicons name="eye-outline" size={14} color="white" />
-            <Text className="text-white text-xs font-semibold ml-1.5">
-              Live Mockup Preview
+          <View className="absolute bottom-10 right-4 bg-black/60 border border-white/20 px-3.5 py-1.5 rounded-full flex-row items-center backdrop-blur-md shadow-lg">
+            <Ionicons name="eye-outline" size={14} color="#A78BFA" />
+            <Text className="text-white text-xs font-bold ml-1.5">
+              Live Mockup Simulator
             </Text>
           </View>
         </Pressable>
@@ -220,8 +256,19 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
             </Text>
           )}
 
+          {/* Dynamic Extracted Color Palette */}
+          <ColorPaletteExtractor
+            seedTitle={wallpaper.title}
+            onColorCopied={(hex) => {
+              setToast({
+                message: `Copied ${hex} to Clipboard! 🎨`,
+                type: 'success',
+              });
+            }}
+          />
+
           {/* Meta Specifications */}
-          <View className="flex-row mt-5 py-3.5 rounded-2xl bg-bg-card border border-white/10">
+          <View className="flex-row my-2 py-3.5 rounded-2xl bg-bg-card border border-white/10">
             <MetaItem
               label={t('wallpaper.resolution')}
               value={
@@ -233,7 +280,7 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
             <View className="w-px bg-white/10" />
             <MetaItem
               label="Format"
-              value="WebP / Cloudinary"
+              value="WebP / 4K"
             />
             <View className="w-px bg-white/10" />
             <MetaItem
@@ -243,11 +290,11 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
           </View>
 
           {/* Floating Action Buttons */}
-          <View className="flex-row mt-5 mb-3 gap-3">
+          <View className="flex-row mt-4 mb-3 gap-3">
             <View className="flex-1">
               <Button
-                title={downloading ? t('wallpaper.downloading') : t('wallpaper.download')}
-                onPress={handleDownload}
+                title={downloading ? t('wallpaper.downloading') : 'Save / Export 4K'}
+                onPress={() => setIsExportModalOpen(true)}
                 loading={downloading}
                 size="lg"
                 fullWidth
@@ -256,7 +303,7 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
             </View>
             <Pressable
               style={styles.actionBtn}
-              className="w-14 h-14 rounded-2xl bg-bg-card border border-white/15 items-center justify-center shadow-lg"
+              className="w-14 h-14 rounded-2xl bg-bg-card border border-white/15 items-center justify-center shadow-lg active:scale-95"
               onPress={() => setIsPreviewOpen(true)}
             >
               <Ionicons name="phone-portrait-outline" size={24} color={colors.accent.primary} />
