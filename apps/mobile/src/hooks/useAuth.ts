@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Session } from '@supabase/supabase-js';
-import { authService } from '../services/auth.service';
+import { Session, User } from '@supabase/supabase-js';
+import { authService, DEMO_VIP_USER } from '../services/auth.service';
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -9,6 +9,7 @@ export function useAuth() {
   useEffect(() => {
     let isMounted = true;
 
+    // Fetch initial session
     authService
       .getSession()
       .then((sess) => {
@@ -17,25 +18,28 @@ export function useAuth() {
           setLoading(false);
         }
       })
-      .catch((err) => {
-        console.warn('Session check skipped:', err);
-        if (isMounted) setLoading(false);
+      .catch(() => {
+        if (isMounted) {
+          setSession(null);
+          setLoading(false);
+        }
       });
 
-    try {
-      const { data } = authService.onAuthStateChange(
-        (_event: string | null, newSession: Session | null) => {
-          if (isMounted) setSession(newSession);
-        },
-      );
-      return () => {
-        isMounted = false;
-        data?.subscription?.unsubscribe?.();
-      };
-    } catch {
-      if (isMounted) setLoading(false);
-    }
+    // Listen for auth events (SIGNED_IN, SIGNED_OUT, etc.)
+    const { data: { subscription } } = authService.onAuthStateChange((_event, newSession) => {
+      if (isMounted) {
+        setSession(newSession);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  return { session, user: session?.user ?? null, loading };
+  const user: User | null = session?.user ?? (session ? (DEMO_VIP_USER as any) : null);
+
+  return { session, user, loading };
 }

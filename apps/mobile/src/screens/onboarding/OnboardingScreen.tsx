@@ -79,7 +79,12 @@ export function OnboardingScreen({ navigation }: Props) {
 
   const completeOnboarding = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    navigation.replace('Login');
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('Main' as never);
+    } else {
+      (navigation as any).navigate('Main');
+    }
   };
 
   const goToNext = () => {

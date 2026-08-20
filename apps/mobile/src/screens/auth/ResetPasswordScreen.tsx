@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -9,28 +9,22 @@ import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 import { AuthHeroLayout } from '../../components/auth/AuthHeroLayout';
 import { AuthTextInput } from '../../components/auth/AuthTextInput';
 import { AuthGradientButton } from '../../components/auth/AuthGradientButton';
-import { SocialAuthRow } from '../../components/auth/SocialAuthRow';
 import { authService } from '../../services/auth.service';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
 
-export function SignupScreen({ navigation }: Props) {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+export function ResetPasswordScreen({ route, navigation }: Props) {
+  const { email } = route.params;
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Inline Validation States
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Real-time password strength calculation
   const passwordCriteria = useMemo(() => {
     const hasMinLength = password.length >= 8;
     const hasNumber = /\d/.test(password);
@@ -57,64 +51,44 @@ export function SignupScreen({ navigation }: Props) {
     };
   }, [password]);
 
-  const validate = (): boolean => {
-    let isValid = true;
-    setNameError(null);
-    setEmailError(null);
+  const handleReset = async () => {
     setPasswordError(null);
     setConfirmError(null);
     setServerError(null);
 
-    if (fullName.trim().length < 2) {
-      setNameError('Full name must be at least 2 characters');
-      isValid = false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim()) {
-      setEmailError('Email address is required');
-      isValid = false;
-    } else if (!emailRegex.test(email.trim())) {
-      setEmailError('Please enter a valid email address');
-      isValid = false;
-    }
-
-    if (!password) {
-      setPasswordError('Password is required');
-      isValid = false;
-    } else if (password.length < 8) {
+    let valid = true;
+    if (!password || password.length < 8) {
       setPasswordError('Password must be at least 8 characters');
-      isValid = false;
+      valid = false;
     } else if (!passwordCriteria.hasNumber) {
       setPasswordError('Password must contain at least 1 number');
-      isValid = false;
+      valid = false;
     }
 
     if (!confirmPassword) {
-      setConfirmError('Please confirm your password');
-      isValid = false;
+      setConfirmError('Please confirm your new password');
+      valid = false;
     } else if (password !== confirmPassword) {
       setConfirmError('Passwords do not match');
-      isValid = false;
+      valid = false;
     }
 
-    return isValid;
-  };
-
-  const handleSignup = async () => {
-    if (!validate()) {
+    if (!valid) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
 
     try {
       setLoading(true);
-      setServerError(null);
-      await authService.signUp(email.trim(), password, fullName.trim());
+      await authService.updatePassword(password);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e: any) {
+      setSuccess('Password updated! Redirecting to login...');
+      setTimeout(() => {
+        navigation.replace('Login');
+      }, 1000);
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setServerError(e?.message || 'Failed to create account.');
+      setServerError(err?.message || 'Failed to update password.');
     } finally {
       setLoading(false);
     }
@@ -122,13 +96,13 @@ export function SignupScreen({ navigation }: Props) {
 
   return (
     <AuthHeroLayout
-      tag="Create account"
-      cardTitle="Register to continue"
-      cardSubtitle="Start creating your 4K wallpaper collections"
+      tag="Security"
+      cardTitle="Set New Password"
+      cardSubtitle={`Create a strong password for ${email}`}
       showBackButton
-      onBackPress={() => navigation.goBack()}
+      onBackPress={() => navigation.navigate('Login')}
     >
-      {/* Server Error Message */}
+      {/* Error / Success Message */}
       {serverError && (
         <Animated.View
           entering={FadeIn.duration(200)}
@@ -142,36 +116,22 @@ export function SignupScreen({ navigation }: Props) {
         </Animated.View>
       )}
 
-      {/* Full Name */}
-      <AuthTextInput
-        placeholder="Full name"
-        value={fullName}
-        onChangeText={(text) => {
-          setFullName(text);
-          if (nameError) setNameError(null);
-        }}
-        autoCapitalize="words"
-        leftIconName="person-outline"
-        error={nameError}
-      />
+      {success && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(200)}
+          className="mb-4 flex-row items-center bg-status-success/15 border border-status-success/40 px-4 py-3 rounded-2xl"
+        >
+          <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+          <Text className="text-status-success text-xs font-semibold ml-2.5 flex-1">
+            {success}
+          </Text>
+        </Animated.View>
+      )}
 
-      {/* Email */}
+      {/* New Password */}
       <AuthTextInput
-        placeholder="Email address"
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          if (emailError) setEmailError(null);
-        }}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        leftIconName="mail-outline"
-        error={emailError}
-      />
-
-      {/* Password */}
-      <AuthTextInput
-        placeholder="Password (Min 8 chars, 1 number)"
+        placeholder="New password (Min 8 chars, 1 number)"
         value={password}
         onChangeText={(text) => {
           setPassword(text);
@@ -184,7 +144,7 @@ export function SignupScreen({ navigation }: Props) {
         error={passwordError}
       />
 
-      {/* Real-time Password Strength Meter */}
+      {/* Strength Bar */}
       {password.length > 0 && (
         <View className="mb-4 bg-[#1A1B29] p-3 rounded-2xl border border-white/10">
           <View className="flex-row items-center justify-between mb-2">
@@ -199,7 +159,6 @@ export function SignupScreen({ navigation }: Props) {
             </Text>
           </View>
 
-          {/* Strength Bars */}
           <View className="flex-row gap-1.5">
             {[1, 2, 3].map((step) => (
               <View
@@ -219,7 +178,7 @@ export function SignupScreen({ navigation }: Props) {
 
       {/* Confirm Password */}
       <AuthTextInput
-        placeholder="Confirm password"
+        placeholder="Confirm new password"
         value={confirmPassword}
         onChangeText={(text) => {
           setConfirmPassword(text);
@@ -232,25 +191,12 @@ export function SignupScreen({ navigation }: Props) {
         error={confirmError}
       />
 
-      {/* Main Register Button */}
+      {/* Update Action */}
       <AuthGradientButton
-        title="Create Account"
-        onPress={handleSignup}
+        title="Update Password"
+        onPress={handleReset}
         loading={loading}
       />
-
-      {/* Social Logins */}
-      <SocialAuthRow />
-
-      {/* Switch to Login */}
-      <View className="flex-row justify-center items-center mt-7">
-        <Text className="text-white/50 text-xs">Already have an account? </Text>
-        <Pressable onPress={() => navigation.navigate('Login')} hitSlop={8}>
-          <Text className="text-[#A78BFA] font-bold text-xs">
-            Log In
-          </Text>
-        </Pressable>
-      </View>
     </AuthHeroLayout>
   );
 }
