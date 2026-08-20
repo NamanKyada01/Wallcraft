@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, Pressable, Alert } from 'react-native';
+import { View, Text, FlatList, Pressable, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -20,7 +20,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { wallpaperService } from '../../services/wallpaper.service';
 import colors from '../../theme/colors';
 import type { MainStackParamList } from '../../navigation/MainNavigator';
-import type { Favorite, Wallpaper } from '../../types';
+import type { Favorite } from '../../types';
 
 export function FavoritesScreen() {
   const { t } = useTranslation();
@@ -64,13 +64,15 @@ export function FavoritesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg-primary" edges={['top']}>
-      <View className="px-4 mb-4 flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-text-primary">
+      <View className="px-4 mb-4 mt-2 flex-row items-center justify-between">
+        <Text className="text-2xl font-extrabold text-text-primary tracking-tight">
           {t('favorites.title')}
         </Text>
-        <Text className="text-text-tertiary text-sm">
-          {t('profile.totalFavorites', { count: favorites.length })}
-        </Text>
+        <View className="bg-accent-primary/20 px-3 py-1 rounded-full border border-accent-primary/30">
+          <Text className="text-accent-secondary text-xs font-bold">
+            {t('profile.totalFavorites', { count: favorites.length })}
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -78,7 +80,7 @@ export function FavoritesScreen() {
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         columnWrapperClassName="justify-between px-4 mb-3"
-        contentContainerClassName="pb-8"
+        contentContainerStyle={{ paddingBottom: 110 }}
         renderItem={({ item, index }) => (
           <FavoriteCard
             favorite={item}
@@ -105,7 +107,7 @@ function FavoriteCard({
   onRemove: (favorite: Favorite) => void;
 }) {
   const scale = useSharedValue(1);
-  const height = 200 + ((index % 3) * 30);
+  const height = 210 + ((index % 3) * 20);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -118,16 +120,16 @@ function FavoriteCard({
   return (
     <Animated.View
       layout={LinearTransition.springify()}
-      style={animatedStyle}
-      className="rounded-2xl overflow-hidden bg-bg-card"
+      style={[animatedStyle, styles.cardShadow]}
+      className="rounded-3xl overflow-hidden bg-bg-card border border-white/10"
     >
       <Pressable
         onPress={() => onPress(favorite)}
         onPressIn={() => {
-          scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+          scale.value = withSpring(0.95, { damping: 15, stiffness: 350 });
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+          scale.value = withSpring(1, { damping: 15, stiffness: 350 });
         }}
       >
         {thumbnail && (
@@ -141,7 +143,7 @@ function FavoriteCard({
 
         {/* Heart remove overlay */}
         <Pressable
-          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 items-center justify-center"
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/50 border border-white/15 items-center justify-center backdrop-blur-md"
           onPress={() => onRemove(favorite)}
           hitSlop={4}
         >
@@ -149,8 +151,8 @@ function FavoriteCard({
         </Pressable>
 
         {favorite.wallpaper && (
-          <View className="absolute bottom-0 left-0 right-0 px-2.5 py-2 bg-black/50">
-            <Text className="text-white text-xs font-medium" numberOfLines={1}>
+          <View className="absolute bottom-0 left-0 right-0 px-3 py-2.5 bg-black/60 backdrop-blur-sm">
+            <Text className="text-white text-xs font-semibold" numberOfLines={1}>
               {favorite.wallpaper.title}
             </Text>
           </View>
@@ -159,3 +161,13 @@ function FavoriteCard({
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  cardShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+});

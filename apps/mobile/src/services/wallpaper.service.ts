@@ -1,4 +1,4 @@
-import { supabase, getCloudinaryUrl } from './supabase';
+import { supabase, getCloudinaryUrl, CloudinaryTransformOptions } from './supabase';
 import type { Wallpaper } from '../types';
 
 export const wallpaperService = {
@@ -56,6 +56,16 @@ export const wallpaperService = {
     return data;
   },
 
+  async getRandomWallpaper(): Promise<Wallpaper | null> {
+    const { data, error } = await supabase
+      .from('wallpapers')
+      .select('*, category:categories(*)')
+      .limit(30);
+    if (error || !data || data.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * data.length);
+    return data[randomIndex];
+  },
+
   async search(query: string, limit = 20): Promise<Wallpaper[]> {
     const { data, error } = await supabase
       .from('wallpapers')
@@ -87,33 +97,50 @@ export const wallpaperService = {
     });
   },
 
+  getCustomTransformUrl(cloudinaryUrl: string, options: CloudinaryTransformOptions): string {
+    return getCloudinaryUrl(cloudinaryUrl, options);
+  },
+
   getThumbnailUrl(cloudinaryUrl: string): string {
-    // Extract public_id from full URL or use direct
-    const publicId = cloudinaryUrl.split('/upload/')[1] ?? '';
-    if (!publicId) return cloudinaryUrl;
-    return getCloudinaryUrl(publicId, {
+    return getCloudinaryUrl(cloudinaryUrl, {
       width: 400,
-      quality: 'auto',
+      height: 600,
+      quality: 'auto:good',
       format: 'webp',
       crop: 'fill',
     });
   },
 
   getPreviewUrl(cloudinaryUrl: string): string {
-    const publicId = cloudinaryUrl.split('/upload/')[1] ?? '';
-    if (!publicId) return cloudinaryUrl;
-    return getCloudinaryUrl(publicId, {
+    return getCloudinaryUrl(cloudinaryUrl, {
       width: 1080,
-      quality: 'auto',
+      quality: 'auto:best',
       format: 'webp',
     });
   },
 
+  getLockScreenPreviewUrl(cloudinaryUrl: string): string {
+    return getCloudinaryUrl(cloudinaryUrl, {
+      width: 1080,
+      height: 2400,
+      crop: 'fill',
+      quality: 'auto:best',
+      format: 'webp',
+    });
+  },
+
+  getBlurredBackdropUrl(cloudinaryUrl: string): string {
+    return getCloudinaryUrl(cloudinaryUrl, {
+      width: 400,
+      quality: 'auto:eco',
+      format: 'webp',
+      effect: 'blur:600',
+    });
+  },
+
   getDownloadUrl(cloudinaryUrl: string): string {
-    const publicId = cloudinaryUrl.split('/upload/')[1] ?? '';
-    if (!publicId) return cloudinaryUrl;
-    return getCloudinaryUrl(publicId, {
-      quality: 'auto',
+    return getCloudinaryUrl(cloudinaryUrl, {
+      quality: '100',
     });
   },
 };

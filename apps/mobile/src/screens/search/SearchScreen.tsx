@@ -93,8 +93,9 @@ export function SearchScreen() {
   const renderContent = () => {
     if (loading) {
       return (
-        <View className="py-12 items-center">
+        <View className="py-16 items-center justify-center">
           <ActivityIndicator size="large" color={colors.accent.primary} />
+          <Text className="text-text-tertiary text-xs mt-3">Searching Cloudinary wallpapers...</Text>
         </View>
       );
     }
@@ -117,7 +118,7 @@ export function SearchScreen() {
               onPress={openWallpaper}
               index={index}
               width="half"
-              height={220}
+              height={230}
             />
           ))}
         </View>
@@ -128,27 +129,27 @@ export function SearchScreen() {
       <View>
         {/* Recent searches */}
         {recent.length > 0 && (
-          <View className="mb-8">
+          <View className="mb-7">
             <View className="flex-row items-center justify-between px-4 mb-3">
-              <Text className="text-lg font-bold text-text-primary">
+              <Text className="text-base font-bold text-text-primary">
                 {t('search.recent')}
               </Text>
               <Pressable onPress={clearHistory} hitSlop={8}>
-                <Ionicons name="trash-outline" size={18} color={colors.text.secondary} />
+                <Ionicons name="trash-outline" size={16} color={colors.text.secondary} />
               </Pressable>
             </View>
             <View className="flex-row flex-wrap px-4 gap-2">
               {recent.map((term) => (
                 <Pressable
                   key={term}
-                  className="flex-row items-center bg-bg-card border border-border-light rounded-full px-3.5 py-2 mr-2 mb-2"
+                  className="flex-row items-center bg-bg-card border border-white/10 rounded-full px-3.5 py-1.5 mr-2 mb-2"
                   onPress={() => {
                     setQuery(term);
                     performSearch(term);
                   }}
                 >
-                  <Ionicons name="time-outline" size={14} color={colors.text.tertiary} />
-                  <Text className="text-text-secondary text-sm ml-1.5">{term}</Text>
+                  <Ionicons name="time-outline" size={13} color={colors.text.tertiary} />
+                  <Text className="text-text-secondary text-xs ml-1.5 font-medium">{term}</Text>
                 </Pressable>
               ))}
             </View>
@@ -157,12 +158,12 @@ export function SearchScreen() {
 
         {/* Browse categories */}
         <View className="mb-8">
-          <Text className="text-lg font-bold text-text-primary px-4 mb-4">
+          <Text className="text-base font-bold text-text-primary px-4 mb-3">
             {t('home.categories')}
           </Text>
-          <View className="flex-row flex-wrap px-4">
+          <View className="flex-row flex-wrap px-4 justify-between">
             {categories.map((category, index) => (
-              <View key={category.id} className="mr-3">
+              <View key={category.id} style={{ width: '48%', marginBottom: 12 }}>
                 <CategoryChip category={category} onPress={openCategory} index={index} />
               </View>
             ))}
@@ -174,8 +175,8 @@ export function SearchScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg-primary" edges={['top']}>
-      <View className="px-4 mb-4">
-        <Text className="text-2xl font-bold text-text-primary mb-4">
+      <View className="px-4 mb-4 mt-2">
+        <Text className="text-2xl font-extrabold text-text-primary mb-3 tracking-tight">
           {t('tabs.explore')}
         </Text>
         <SearchBar
@@ -188,7 +189,8 @@ export function SearchScreen() {
       <FlatList
         data={[{ key: 'content' }]}
         keyExtractor={(item) => item.key}
-        renderItem={() => <View className="pb-8">{renderContent()}</View>}
+        contentContainerStyle={{ paddingBottom: 110 }}
+        renderItem={() => <View>{renderContent()}</View>}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       />

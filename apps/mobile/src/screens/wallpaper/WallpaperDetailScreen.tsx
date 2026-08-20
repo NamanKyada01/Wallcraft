@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, Alert, Share, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, Pressable, ScrollView, Alert, Share, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
@@ -10,11 +10,12 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 
 import { Button } from '../../components/ui/Button';
 import { WallpaperCard } from '../../components/WallpaperCard';
+import { FloatingLivePreview } from '../../components/ui/FloatingLivePreview';
+import { FloatingToast, ToastConfig } from '../../components/ui/FloatingToast';
 import { wallpaperService } from '../../services/wallpaper.service';
 import { storageService } from '../../services/storage.service';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -36,6 +37,8 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [related, setRelated] = useState<Wallpaper[]>([]);
   const [favorite, setFavorite] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [toast, setToast] = useState<ToastConfig | null>(null);
 
   const heartScale = useSharedValue(1);
 
@@ -58,8 +61,13 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
     heartScale.value = withSpring(1.4, { damping: 8 }, () => {
       heartScale.value = withSpring(1);
     });
-    setFavorite(!favorite);
+    const next = !favorite;
+    setFavorite(next);
     toggleFavorite(wallpaper.id);
+    setToast({
+      message: next ? 'Added to Favorites ❤️' : 'Removed from Favorites',
+      type: 'info',
+    });
   };
 
   const handleDownload = async () => {
@@ -75,7 +83,10 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
         await wallpaperService.recordDownload(wallpaper.id, user.id);
       }
 
-      Alert.alert(t('common.success'), t('wallpaper.downloadSuccess'));
+      setToast({
+        message: 'Wallpaper saved to Gallery! 📥',
+        type: 'success',
+      });
     } catch (e: any) {
       Alert.alert(t('common.error'), e?.message ?? t('common.error'));
     } finally {
@@ -86,7 +97,7 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `${wallpaper.title} — Wallcraft`,
+        message: `${wallpaper.title} — Wallcraft Wallpaper`,
         url: wallpaper.cloudinary_url,
       });
     } catch {
@@ -102,38 +113,59 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
 
   return (
     <View className="flex-1 bg-bg-primary">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Full-screen image */}
-        <Pressable onPress={() => navigation.goBack()}>
+      {/* Floating Toast Notification */}
+      <FloatingToast toast={toast} onHide={() => setToast(null)} />
+
+      {/* Floating Interactive Live Simulator Modal */}
+      <FloatingLivePreview
+        visible={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        imageUrl={previewUrl}
+        title={wallpaper.title}
+      />
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* Full-bleed wallpaper preview with live preview toggle */}
+        <Pressable onPress={() => setIsPreviewOpen(true)} className="relative">
           <Image
             source={{ uri: previewUrl }}
-            style={{ width: '100%', height: 500 }}
+            style={{ width: '100%', height: 520 }}
             contentFit="cover"
             transition={300}
           />
+
+          {/* Floating Tap to Preview Badge */}
+          <View className="absolute bottom-10 right-4 bg-black/60 border border-white/20 px-3 py-1.5 rounded-full flex-row items-center backdrop-blur-md">
+            <Ionicons name="eye-outline" size={14} color="white" />
+            <Text className="text-white text-xs font-semibold ml-1.5">
+              Live Mockup Preview
+            </Text>
+          </View>
         </Pressable>
 
-        {/* Floating back + action buttons over image */}
+        {/* Floating Top Nav Bar (Back, Share, Heart) */}
         <View
-          className="absolute top-0 left-0 right-0 flex-row justify-between px-4"
-          style={{ paddingTop: insets.top + 8 }}
+          className="absolute top-0 left-0 right-0 flex-row justify-between px-4 z-30"
+          style={{ paddingTop: Math.max(insets.top, 12) }}
+          pointerEvents="box-none"
         >
           <Pressable
-            className="w-10 h-10 rounded-full bg-black/40 items-center justify-center"
+            className="w-11 h-11 rounded-full bg-black/50 border border-white/20 items-center justify-center backdrop-blur-md shadow-lg"
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={22} color="white" />
           </Pressable>
 
-          <View className="flex-row">
+          <View className="flex-row items-center gap-2">
             <Pressable
-              className="w-10 h-10 rounded-full bg-black/40 items-center justify-center mr-2"
+              className="w-11 h-11 rounded-full bg-black/50 border border-white/20 items-center justify-center backdrop-blur-md shadow-lg"
               onPress={handleShare}
             >
               <Ionicons name="share-social-outline" size={20} color="white" />
             </Pressable>
+
             <Pressable
-              className="w-10 h-10 rounded-full bg-black/40 items-center justify-center"
+              className="w-11 h-11 rounded-full bg-black/50 border border-white/20 items-center justify-center backdrop-blur-md shadow-lg"
               onPress={handleFavorite}
             >
               <Animated.View style={heartStyle}>
@@ -147,31 +179,36 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Info section */}
-        <View className="px-5 pt-5 -mt-6 rounded-t-3xl bg-bg-primary">
-          <Text className="text-2xl font-bold text-text-primary">
-            {wallpaper.title}
-          </Text>
-
-          <View className="flex-row items-center mt-2">
-            {wallpaper.category && (
-              <View
-                className="rounded-full px-3 py-1 mr-2"
-                style={{
-                  backgroundColor: `${wallpaper.category.color ?? '#7C6EF6'}22`,
-                }}
-              >
-                <Text
-                  className="text-xs font-semibold"
-                  style={{ color: wallpaper.category.color ?? colors.accent.primary }}
-                >
-                  {wallpaper.category.name}
+        {/* Floating Card Info Sheet */}
+        <View className="px-5 pt-6 -mt-6 rounded-t-3xl bg-bg-primary border-t border-white/10">
+          <View className="flex-row items-start justify-between">
+            <View className="flex-1 mr-3">
+              <Text className="text-2xl font-extrabold text-text-primary tracking-tight">
+                {wallpaper.title}
+              </Text>
+              <View className="flex-row items-center mt-2">
+                {wallpaper.category && (
+                  <View
+                    className="rounded-full px-3 py-1 mr-2.5"
+                    style={{
+                      backgroundColor: `${wallpaper.category.color ?? '#7C6EF6'}25`,
+                      borderWidth: 1,
+                      borderColor: `${wallpaper.category.color ?? '#7C6EF6'}50`,
+                    }}
+                  >
+                    <Text
+                      className="text-xs font-bold"
+                      style={{ color: wallpaper.category.color ?? colors.accent.primary }}
+                    >
+                      {wallpaper.category.name}
+                    </Text>
+                  </View>
+                )}
+                <Text className="text-text-tertiary text-xs font-semibold">
+                  ↓ {formatNumber(wallpaper.download_count)} downloads
                 </Text>
               </View>
-            )}
-            <Text className="text-text-tertiary text-sm">
-              ↓ {formatNumber(wallpaper.download_count)}
-            </Text>
+            </View>
           </View>
 
           {wallpaper.description && (
@@ -180,64 +217,66 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
             </Text>
           )}
 
-          {/* Meta row */}
-          <View className="flex-row mt-4 py-3 rounded-2xl bg-bg-card border border-border-light">
+          {/* Meta Specifications */}
+          <View className="flex-row mt-5 py-3.5 rounded-2xl bg-bg-card border border-white/10">
             <MetaItem
               label={t('wallpaper.resolution')}
               value={
                 wallpaper.width && wallpaper.height
                   ? `${wallpaper.width}×${wallpaper.height}`
-                  : '—'
+                  : '4K Ultra HD'
               }
             />
-            <View className="w-px bg-border-light" />
+            <View className="w-px bg-white/10" />
+            <MetaItem
+              label="Format"
+              value="WebP / Cloudinary"
+            />
+            <View className="w-px bg-white/10" />
             <MetaItem
               label={t('wallpaper.category')}
-              value={wallpaper.category?.name ?? '—'}
+              value={wallpaper.category?.name ?? 'General'}
             />
           </View>
 
-          {/* Action buttons */}
-          <View className="flex-row mt-5 mb-2">
-            <View className="flex-1 mr-3">
+          {/* Floating Action Buttons */}
+          <View className="flex-row mt-5 mb-3 gap-3">
+            <View className="flex-1">
               <Button
-                title={
-                  downloading ? t('wallpaper.downloading') : t('wallpaper.download')
-                }
+                title={downloading ? t('wallpaper.downloading') : t('wallpaper.download')}
                 onPress={handleDownload}
                 loading={downloading}
                 size="lg"
                 fullWidth
-                icon={
-                  <Ionicons name="download-outline" size={20} color="white" />
-                }
+                icon={<Ionicons name="download-outline" size={20} color="white" />}
               />
             </View>
             <Pressable
-              className="w-14 h-14 rounded-xl bg-bg-card border border-border-light items-center justify-center"
-              onPress={handleDownload}
+              style={styles.actionBtn}
+              className="w-14 h-14 rounded-2xl bg-bg-card border border-white/15 items-center justify-center shadow-lg"
+              onPress={() => setIsPreviewOpen(true)}
             >
               <Ionicons name="phone-portrait-outline" size={24} color={colors.accent.primary} />
             </Pressable>
           </View>
 
           {/* Tags */}
-          {wallpaper.tags.length > 0 && (
+          {wallpaper.tags && wallpaper.tags.length > 0 && (
             <View className="flex-row flex-wrap mt-3">
               {wallpaper.tags.map((tag) => (
                 <View
                   key={tag}
-                  className="bg-bg-card border border-border-light rounded-full px-3 py-1 mr-2 mb-2"
+                  className="bg-bg-card border border-white/10 rounded-full px-3 py-1 mr-2 mb-2"
                 >
-                  <Text className="text-text-secondary text-xs">#{tag}</Text>
+                  <Text className="text-text-secondary text-xs font-medium">#{tag}</Text>
                 </View>
               ))}
             </View>
           )}
 
-          {/* Related */}
+          {/* Related Wallpapers */}
           {related.length > 0 && (
-            <View className="mt-6">
+            <View className="mt-7">
               <Text className="text-lg font-bold text-text-primary mb-4">
                 {t('wallpaper.related')}
               </Text>
@@ -249,7 +288,7 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
                     onPress={openRelated}
                     index={index}
                     width="half"
-                    height={180}
+                    height={190}
                   />
                 ))}
               </View>
@@ -264,8 +303,18 @@ export function WallpaperDetailScreen({ route, navigation }: Props) {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-1 items-center">
-      <Text className="text-text-tertiary text-xs">{label}</Text>
-      <Text className="text-text-primary text-sm font-semibold mt-0.5">{value}</Text>
+      <Text className="text-text-tertiary text-[11px]">{label}</Text>
+      <Text className="text-text-primary text-xs font-bold mt-0.5">{value}</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  actionBtn: {
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+});
