@@ -7,7 +7,7 @@ import { Button } from './ui/Button';
 interface EmptyStateProps {
   title: string;
   description?: string;
-  animationSource?: object;
+  animationSource?: any;
   actionLabel?: string;
   onAction?: () => void;
 }

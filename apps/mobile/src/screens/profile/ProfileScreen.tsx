@@ -25,14 +25,13 @@ export function ProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
-    authService.getProfile(user.id).then(setProfile).catch(console.error);
+    authService.getProfile(user.id).then(setProfile).catch(() => {});
 
     supabase
       .from('downloads')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .then(({ count }) => setDownloadCount(count ?? 0))
-      .catch(console.error);
+      .then(({ count }) => setDownloadCount(count ?? 0));
   }, [user?.id]);
 
   const menuItems = [

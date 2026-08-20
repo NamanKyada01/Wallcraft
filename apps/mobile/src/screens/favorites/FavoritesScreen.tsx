@@ -9,7 +9,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   useSharedValue,
-  Layout,
+  LinearTransition,
 } from 'react-native-reanimated';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -117,7 +117,7 @@ function FavoriteCard({
 
   return (
     <Animated.View
-      layout={Layout.springAnim()}
+      layout={LinearTransition.springify()}
       style={animatedStyle}
       className="rounded-2xl overflow-hidden bg-bg-card"
     >

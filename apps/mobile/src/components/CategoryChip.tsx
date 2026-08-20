@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Pressable, useWindowDimensions } from 'react-native';
+import { Text, Pressable, View, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

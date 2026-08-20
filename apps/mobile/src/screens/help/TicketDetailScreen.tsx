@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, Pressable, FlatList, KeyboardAvoidingView, Platform, Alert, TextInput as RNTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import { TextInput } from '../../components/ui/TextInput';
 import { Button } from '../../components/ui/Button';
 import { TicketStatusBadge } from '../../components/TicketStatusBadge';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -87,14 +86,13 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       >
         <View className="flex-row items-end gap-3">
           <View className="flex-1 bg-bg-card border border-border-light rounded-2xl px-4 py-2.5">
-            <TextInput
+            <RNTextInput
               value={replyText}
               onChangeText={setReplyText}
               placeholder={t('ticket.replyPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               multiline
               className="text-text-primary text-sm"
-              // Override the default TextInput wrapper styling
             />
           </View>
           <Pressable

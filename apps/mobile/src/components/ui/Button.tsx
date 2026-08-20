@@ -1,6 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, View } from 'react-native';
-import { styled } from 'nativewind';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -82,14 +81,9 @@ export function Button({
 
   return (
     <AnimatedTouchableOpacity
-      className={[
-        'flex-row items-center justify-center',
-        sizeClasses[size],
-        variantClasses[variant],
-        disabled && 'opacity-40',
-        fullWidth && 'w-full',
-        className,
-      ]}
+      className={`flex-row items-center justify-center ${sizeClasses[size]} ${variantClasses[variant]} ${
+        disabled ? 'opacity-40' : ''
+      } ${fullWidth ? 'w-full' : ''} ${className}`}
       style={animatedStyle}
       onPress={handlePress}
       onPressIn={handlePressIn}
@@ -102,7 +96,7 @@ export function Button({
       ) : (
         <>
           {icon && <View className="mr-2">{icon}</View>}
-          <Text className={[textClasses[size], textVariantClasses[variant]]}>
+          <Text className={`${textClasses[size]} ${textVariantClasses[variant]}`}>
             {title}
           </Text>
         </>

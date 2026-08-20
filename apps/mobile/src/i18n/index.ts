@@ -11,7 +11,7 @@ import ar from './locales/ar.json';
 
 const LANGUAGE_KEY = 'app_language';
 
-const resources = {
+const resources: Record<string, any> = {
   en: { translation: en },
   es: { translation: es },
   fr: { translation: fr },

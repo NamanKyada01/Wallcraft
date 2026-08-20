@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { Layout } from 'react-native-reanimated';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { TicketStatusBadge } from '../../components/TicketStatusBadge';
 import { EmptyState } from '../../components/EmptyState';
@@ -76,7 +76,7 @@ export function TicketListScreen({ navigation }: Props) {
 
 function TicketRow({ ticket, onPress }: { ticket: Ticket; onPress: (t: Ticket) => void }) {
   return (
-    <Animated.View layout={Layout.springAnim()}>
+    <Animated.View layout={LinearTransition.springify()}>
       <Pressable
         className="bg-bg-card border border-border-light rounded-2xl px-4 py-4"
         onPress={() => onPress(ticket)}

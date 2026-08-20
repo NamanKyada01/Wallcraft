@@ -12,11 +12,13 @@ export function useAuth() {
       setLoading(false);
     });
 
-    const { data: subscription } = authService.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    const { data } = authService.onAuthStateChange(
+      (_event: string | null, session: Session | null) => {
+        setSession(session);
+      },
+    );
 
-    return () => subscription.unsubscribe();
+    return () => data.subscription.unsubscribe();
   }, []);
 
   return { session, user: session?.user ?? null, loading };

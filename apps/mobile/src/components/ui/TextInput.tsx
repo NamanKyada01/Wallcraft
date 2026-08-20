@@ -46,29 +46,22 @@ export function TextInput({
   return (
     <View className={`mb-4 ${className}`}>
       <Text
-        className={[
-          'text-sm font-medium mb-1.5',
-          isFocused ? 'text-accent-primary' : 'text-text-secondary',
-        ]}
+        className={`text-sm font-medium mb-1.5 ${
+          isFocused ? 'text-accent-primary' : 'text-text-secondary'
+        }`}
       >
         {label}
       </Text>
 
       <View
-        className={[
-          'flex-row items-center rounded-xl px-4 border transition-colors',
-          'bg-bg-input',
-          isFocused ? 'border-accent-primary' : 'border-border-light',
-          error ? 'border-status-error' : '',
-        ]}
+        className={`flex-row items-center rounded-xl px-4 border bg-bg-input ${
+          error ? 'border-status-error' : isFocused ? 'border-accent-primary' : 'border-border-light'
+        }`}
       >
         {leftIcon && <View className="mr-3">{leftIcon}</View>}
 
         <RNTextInput
-          className={[
-            'flex-1 text-text-primary py-3 text-base',
-            multiline && 'pt-2',
-          ]}
+          className={`flex-1 text-text-primary py-3 text-base ${multiline ? 'pt-2' : ''}`}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

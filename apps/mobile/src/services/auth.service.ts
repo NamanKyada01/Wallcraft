@@ -37,10 +37,10 @@ export const authService = {
     return data.session;
   },
 
-  onAuthStateChange(callback: (session: any) => void) {
-    return supabase.auth.onAuthStateChange((_event, session) => {
-      callback(session);
-    });
+  onAuthStateChange(
+    callback: (event: string | null, session: any) => void,
+  ) {
+    return supabase.auth.onAuthStateChange(callback);
   },
 
   async getProfile(userId: string): Promise<User | null> {
